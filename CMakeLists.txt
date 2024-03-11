@@ -10,12 +10,17 @@ FetchContent_Declare(
 )
 FetchContent_MakeAvailable(json)
 
-#add_subdirectory(${PROJECT_SOURCE_DIR}/external/gzip-hpp)
+# Fetch zlib
+FetchContent_Declare(
+  zlib
+  GIT_REPOSITORY https://github.com/madler/zlib.git
+  GIT_TAG        v1.2.11  # Specify the tag or commit hash you want to use
+)
+FetchContent_MakeAvailable(zlib)
 
 add_executable(${PROJECT_NAME} main.cpp)
 
-#target_include_directories(${PROJECT_NAME} PRIVATE ${PROJECT_SOURCE_DIR}/external/gzip-hpp/include)
 target_include_directories(${PROJECT_NAME} PUBLIC "includes/")
 
 target_link_libraries(${PROJECT_NAME} PRIVATE nlohmann_json::nlohmann_json)
-#target_link_libraries(${PROJECT_NAME} PRIVATE gzip-hpp)
+target_link_libraries(${PROJECT_NAME} PRIVATE zlib)
