@@ -93,11 +93,11 @@ public:
         addressed_tiles += 1;
     }
 
-    void finalize(const pmtiles::headerv3& header, const json& metadata) {
+    void finalize(pmtiles::headerv3& header, const json& metadata) {
         header.addressed_tiles_count = addressed_tiles;
         header.tile_entries_count = tile_entries.size();
         header.tile_contents_count = hash_to_offset.size();
-
+        
         std::sort(tile_entries.begin(), tile_entries.end(), pmtiles::entryv3_cmp);
 
         header.min_zoom = pmtiles::tileid_to_zxy(tile_entries.front().tile_id).z;
@@ -105,18 +105,16 @@ public:
 
         auto [root_bytes, leaves_bytes, num_leaves] = pmtiles::make_root_leaves(
             [](const std::string& input, uint8_t compression) {
-                return gzip::compress(input.data(), input.size());
-                
-                return input;
+                return ZlibWrapper::compile(input.data());
             },
-            pmtiles::COMPRESSION_UNKNOWN, // change the compression to unknow
+            pmtiles::COMPRESSION_UNKNOWN,
             tile_entries
         );
 
-        auto compressed_metadata = gzip::compress(metadata.dump().data(), metadata.dump().size());
+        auto compressed_metadata = ZlibWrapper::compile(metadata.dump().data());
 
         header.clustered = clustered;
-        header.internal_compression = pmtiles::COMPRESSION_UNKNOWN; // change to compression unknow
+        header.internal_compression = pmtiles::COMPRESSION_UNKNOWN;
         header.root_dir_offset = 127;
         header.root_dir_bytes = root_bytes.size();
         header.json_metadata_offset = header.root_dir_offset + header.root_dir_bytes;
@@ -128,7 +126,6 @@ public:
 
         std::string header_bytes = header.serialize();
 
-        // string first pointer
         file.write(header_bytes.c_str(), header_bytes.size());
         file.write(root_bytes.c_str(), root_bytes.size());
         file.write(compressed_metadata.c_str(), compressed_metadata.size());
