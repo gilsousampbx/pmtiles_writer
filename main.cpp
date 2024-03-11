@@ -3,11 +3,54 @@
 #include <vector>
 #include <unordered_map>
 #include <algorithm>
-#include <gzip/compress.hpp>
+#include <zlib.h>
 #include <nlohmann/json.hpp>
 #include "pmtiles.hpp"
 
+
 using json = nlohmann::json;
+
+
+class ZlibWrapper {
+public:
+    static std::string compile(const std::string& input) {
+        z_stream zs;
+        memset(&zs, 0, sizeof(zs));
+
+        if (deflateInit(&zs, Z_DEFAULT_COMPRESSION) != Z_OK)
+            throw(std::runtime_error("deflateInit failed while compressing."));
+
+        zs.next_in = (Bytef*)input.data();
+        zs.avail_in = input.size();
+
+        int ret;
+        char outbuffer[32768]; // Buffer to hold compressed data
+
+        std::string outstring;
+
+        do {
+            zs.next_out = reinterpret_cast<Bytef*>(outbuffer);
+            zs.avail_out = sizeof(outbuffer);
+
+            ret = deflate(&zs, Z_FINISH);
+
+            if (outstring.size() < zs.total_out) {
+                outstring.append(outbuffer, zs.total_out - outstring.size());
+            }
+        } while (ret == Z_OK);
+
+        deflateEnd(&zs);
+
+        if (ret != Z_STREAM_END) {
+            std::ostringstream oss;
+            oss << "Exception during zlib compression: (" << ret << ") " << zs.msg;
+            throw(std::runtime_error(oss.str()));
+        }
+
+        return outstring;
+    }
+};
+
 
 class Writer {
 private:
@@ -96,7 +139,6 @@ public:
 
 
 int main() {
-
     std::string tile_data = "This is tile data";
 
     pmtiles::headerv3 header;
@@ -120,8 +162,6 @@ int main() {
     writer.write_tile(pmtiles::zxy_to_tileid(0, 0, 0), tile_data);
     writer.write_tile(pmtiles::zxy_to_tileid(1, 0, 0), tile_data);
     writer.finalize(header, metadata);
-
-    std::cout << pmtiles::zxy_to_tileid(3, 0, 0) << std::endl;
 
     return 0;
 }
