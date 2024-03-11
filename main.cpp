@@ -139,25 +139,26 @@ int main() {
     std::string tile_data = "This is tile data";
 
     pmtiles::headerv3 header;
-    header.tile_type = pmtiles::TILETYPE_PNG;
+    header.tile_type = pmtiles::COMPRESSION_UNKNOWN;
     header.tile_compression = pmtiles::COMPRESSION_NONE;
-    header.min_zoom = 0;
-    header.max_zoom = 3;
-    header.min_lon_e7 = static_cast<int32_t>(-180.0 * 10000000);
-    header.min_lat_e7 = static_cast<int32_t>(-85.0 * 10000000);
-    header.max_lon_e7 = static_cast<int32_t>(180.0 * 10000000);
-    header.max_lat_e7 = static_cast<int32_t>(85.0 * 10000000);
-    header.center_zoom = 0;
-    header.center_lon_e7 = 0;
-    header.center_lat_e7 = 0;
+    //header.min_zoom = 0;
+    //header.max_zoom = 3;
+    //header.min_lon_e7 = static_cast<int32_t>(-180.0 * 10000000);
+    //header.min_lat_e7 = static_cast<int32_t>(-85.0 * 10000000);
+    //header.max_lon_e7 = static_cast<int32_t>(180.0 * 10000000);
+    //header.max_lat_e7 = static_cast<int32_t>(85.0 * 10000000);
+    //header.center_zoom = 0;
+    //header.center_lon_e7 = 0;
+    //header.center_lat_e7 = 0;
 
     json metadata = {
         {"attribution", "Map tiles by <a href='http://stamen.com'>Stamen Design</a>, under <a href='http://creativecommons.org/licenses/by/3.0'>CC BY 3.0</a>. Data by <a href='http://openstreetmap.org'>OpenStreetMap</a>, under <a href='http://www.openstreetmap.org/copyright'>ODbL</a>."},
     };
 
     Writer writer("stamen_toner_maxzoom3.pmtiles");
-    writer.write_tile(pmtiles::zxy_to_tileid(0, 0, 0), tile_data);
-    writer.write_tile(pmtiles::zxy_to_tileid(1, 0, 0), tile_data);
+    writer.write_tile(pmtiles::zxy_to_tileid(0, 0, 0), "1");
+    writer.write_tile(pmtiles::zxy_to_tileid(2, 0, 0), "2");
+    writer.write_tile(pmtiles::zxy_to_tileid(3, 0, 0), "3");
     writer.finalize(header, metadata);
 
     return 0;
