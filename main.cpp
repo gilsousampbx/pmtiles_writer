@@ -69,7 +69,9 @@ public:
         }
     }
 
-    void write_tile(uint64_t tileid, const std::string& data) {
+    void write_tile(uint8_t z, uint32_t x, uint32_t y, const std::string& data) {
+        uint16_t tileid = pmtiles::zxy_to_tileid(z, x, y);
+
         if (!tile_entries.empty() && tileid < tile_entries.back().tile_id) {
             clustered = false;
         }
