@@ -63,7 +63,7 @@ private:
     bool clustered = true;
 
 public:
-    Writer(const std::string& filename) : file(filename, std::ios::binary) {
+    Writer() : file("stamen_toner_maxzoom3.pmtiles", std::ios::binary) {
         if (!file.is_open()) {
             throw std::runtime_error("Failed to open file");
         }
@@ -107,20 +107,21 @@ public:
 
         auto [root_bytes, leaves_bytes, num_leaves] = pmtiles::make_root_leaves(
             [](const std::string& input, uint8_t compression) {
-                return ZlibWrapper::compile(input.data());
+                return input.data(); //return ZlibWrapper::compile(input.data());
             },
-            pmtiles::COMPRESSION_UNKNOWN,
+            pmtiles::COMPRESSION_NONE,
             tile_entries
         );
 
-        auto compressed_metadata = ZlibWrapper::compile(metadata.dump().data());
+        //auto compressed_metadata = ZlibWrapper::compile(metadata.dump().data());
+        std::string metadata_bytes = metadata.dump();
 
         header.clustered = clustered;
-        header.internal_compression = pmtiles::COMPRESSION_UNKNOWN;
+        header.internal_compression = pmtiles::COMPRESSION_NONE;
         header.root_dir_offset = 127;
         header.root_dir_bytes = root_bytes.size();
         header.json_metadata_offset = header.root_dir_offset + header.root_dir_bytes;
-        header.json_metadata_bytes = compressed_metadata.size();
+        header.json_metadata_bytes = metadata_bytes.size();
         header.leaf_dirs_offset = header.json_metadata_offset + header.json_metadata_bytes;
         header.leaf_dirs_bytes = leaves_bytes.size();
         header.tile_data_offset = header.leaf_dirs_offset + header.leaf_dirs_bytes;
@@ -130,7 +131,7 @@ public:
 
         file.write(header_bytes.c_str(), header_bytes.size());
         file.write(root_bytes.c_str(), root_bytes.size());
-        file.write(compressed_metadata.c_str(), compressed_metadata.size());
+        file.write(metadata_bytes.c_str(), metadata_bytes.size());
         file.write(leaves_bytes.c_str(), leaves_bytes.size());
         file << tile_stream.rdbuf();
     }
@@ -141,26 +142,26 @@ int main() {
     std::string tile_data = "This is tile data";
 
     pmtiles::headerv3 header;
-    header.tile_type = pmtiles::COMPRESSION_UNKNOWN;
+    header.tile_type = pmtiles::TILETYPE_UNKNOWN;
     header.tile_compression = pmtiles::COMPRESSION_NONE;
-    //header.min_zoom = 0;
-    //header.max_zoom = 3;
-    //header.min_lon_e7 = static_cast<int32_t>(-180.0 * 10000000);
-    //header.min_lat_e7 = static_cast<int32_t>(-85.0 * 10000000);
-    //header.max_lon_e7 = static_cast<int32_t>(180.0 * 10000000);
-    //header.max_lat_e7 = static_cast<int32_t>(85.0 * 10000000);
-    //header.center_zoom = 0;
-    //header.center_lon_e7 = 0;
-    //header.center_lat_e7 = 0;
+    header.min_zoom = 0;
+    header.max_zoom = 3;
+    header.min_lon_e7 = static_cast<int32_t>(-180.0 * 10000000);
+    header.min_lat_e7 = static_cast<int32_t>(-85.0 * 10000000);
+    header.max_lon_e7 = static_cast<int32_t>(180.0 * 10000000);
+    header.max_lat_e7 = static_cast<int32_t>(85.0 * 10000000);
+    header.center_zoom = 0;
+    header.center_lon_e7 = 0;
+    header.center_lat_e7 = 0;
 
     json metadata = {
         {"attribution", "Map tiles by <a href='http://stamen.com'>Stamen Design</a>, under <a href='http://creativecommons.org/licenses/by/3.0'>CC BY 3.0</a>. Data by <a href='http://openstreetmap.org'>OpenStreetMap</a>, under <a href='http://www.openstreetmap.org/copyright'>ODbL</a>."},
     };
 
-    Writer writer("stamen_toner_maxzoom3.pmtiles");
-    writer.write_tile(pmtiles::zxy_to_tileid(0, 0, 0), "1");
-    writer.write_tile(pmtiles::zxy_to_tileid(2, 0, 0), "2");
-    writer.write_tile(pmtiles::zxy_to_tileid(3, 0, 0), "3");
+    Writer writer;
+    writer.write_tile(0, 0, 0, tile_data);
+    writer.write_tile(2, 0, 0, tile_data);
+    writer.write_tile(3, 0, 0, tile_data);
     writer.finalize(header, metadata);
 
     return 0;
