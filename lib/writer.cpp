@@ -10,7 +10,7 @@ using json = nlohmann::json;
 
 class Writer {
 private:
-    std::ofstream file;
+    std::stringstream buffer;
     std::vector<pmtiles::entryv3> tile_entries;
     std::unordered_map<size_t, uint64_t> hash_to_offset;
     std::stringstream tile_stream;
@@ -19,11 +19,7 @@ private:
     bool clustered = true;
 
 public:
-    Writer() : file("stamen_toner_maxzoom3.pmtiles", std::ios::binary) {
-        if (!file.is_open()) {
-            throw std::runtime_error("Failed to open file");
-        }
-    }
+    Writer() {}
 
     void write_tile(uint8_t z, uint32_t x, uint32_t y, const std::string& data) {
         uint16_t tileid = pmtiles::zxy_to_tileid(z, x, y);
@@ -51,7 +47,7 @@ public:
         addressed_tiles += 1;
     }
 
-    void finalize(pmtiles::headerv3& header, const json& metadata) {
+    std::string finalize(pmtiles::headerv3& header, const json& metadata) {
         header.addressed_tiles_count = addressed_tiles;
         header.tile_entries_count = tile_entries.size();
         header.tile_contents_count = hash_to_offset.size();
@@ -63,13 +59,12 @@ public:
 
         auto [root_bytes, leaves_bytes, num_leaves] = pmtiles::make_root_leaves(
             [](const std::string& input, uint8_t compression) {
-                return input.data(); //return ZlibWrapper::compile(input.data());
+                return input.data();
             },
             pmtiles::COMPRESSION_NONE,
             tile_entries
         );
 
-        //auto compressed_metadata = ZlibWrapper::compile(metadata.dump().data());
         std::string metadata_bytes = metadata.dump();
 
         header.clustered = clustered;
@@ -85,10 +80,12 @@ public:
 
         std::string header_bytes = header.serialize();
 
-        file.write(header_bytes.c_str(), header_bytes.size());
-        file.write(root_bytes.c_str(), root_bytes.size());
-        file.write(metadata_bytes.c_str(), metadata_bytes.size());
-        file.write(leaves_bytes.c_str(), leaves_bytes.size());
-        file << tile_stream.rdbuf();
+        buffer.write(header_bytes.c_str(), header_bytes.size());
+        buffer.write(root_bytes.c_str(), root_bytes.size());
+        buffer.write(metadata_bytes.c_str(), metadata_bytes.size());
+        buffer.write(leaves_bytes.c_str(), leaves_bytes.size());
+        buffer << tile_stream.rdbuf();
+
+        return buffer.str();
     }
 };
