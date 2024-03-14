@@ -1,0 +1,20 @@
+{
+  "name": "pmtiles_writer",
+  "version": "1.0.0",
+  "description": "Experiment to convert to the `Writer` class from [PMTiles project](https://github.com/protomaps/PMTiles/blob/main/python/pmtiles/writer.py)  into a C++ class. The create program to test the functionality is based on the example [create_raster_example.py](https://github.com/protomaps/PMTiles/blob/main/python/examples/create_raster_example.py)",
+  "main": "index.js",
+  "scripts": {
+    "test": "node test.js",
+    "build": "node-gyp rebuild"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "node-addon-api": "^8.0.0",
+    "node-gyp": "^10.0.1"
+  },
+  "devDependencies": {
+    "cmake-js": "^7.3.0"
+  }
+}
