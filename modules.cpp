@@ -9,15 +9,51 @@ using v8::Local;
 using v8::Object;
 using v8::String;
 using v8::Value;
+using v8::Exception;
+using v8::Array;
+using v8::Context;
+using v8::Boolean;
 
 void GeneratePMTilesBundle(const FunctionCallbackInfo<Value>& args) {
     Isolate* isolate = args.GetIsolate();
+    auto context = isolate->GetCurrentContext();
+
+    if (args.Length() < 2) {
+        isolate->ThrowException(Exception::TypeError(String::NewFromUtf8(isolate, "generate_pmtiles_bundle requires at least 2 arguments").ToLocalChecked()));
+        return;
+    }
+
+    auto tiles_arr = Local<Array>::Cast(args[0]);
+    auto z_str = String::NewFromUtf8(isolate, "z").ToLocalChecked();
+    auto x_str = String::NewFromUtf8(isolate, "x");
+    auto y_str = String::NewFromUtf8(isolate, "y");
+    auto buffer_str = String::NewFromUtf8(isolate, "buffer");
+
+    if (tiles_arr->Length() == 0) {
+        isolate->ThrowException(Exception::TypeError(String::NewFromUtf8(isolate, "The tiles array must have at least one tile").ToLocalChecked()));
+        return;
+    }
 
     Writer writer;
 
+    for (size_t i = 0; i < tiles_arr->Length(); ++i) {
+        auto t_item = tiles_arr->Get(context, i).ToLocalChecked();
+
+        if (!t_item->IsObject()) {
+            isolate->ThrowException(Exception::TypeError(String::NewFromUtf8(isolate, "items in the tiles array must be objects with the fields 'z', 'x', 'y' and 'buffer'").ToLocalChecked()));
+            return;
+        }
+
+        auto t_obj = Local<Object>::Cast(t_item);
+        if (t_obj->Has(context, z_str).ToChecked() == Local<Boolean>::True()) {
+            isolate->ThrowException(Exception::TypeError(String::NewFromUtf8(isolate, "items in the tiles array must be objects with the fields 'z', 'x', 'y' and 'buffer'").ToLocalChecked()));
+            return;
+        }
+    }
+
     pmtiles::headerv3 header;
-    header.tile_type = pmtiles::TILETYPE_UNKNOWN;
-    header.tile_compression = pmtiles::COMPRESSION_NONE;
+    header.tile_type = pmtiles::TILETYPE_MVT;
+    header.tile_compression = pmtiles::COMPRESSION_UNKNOWN;
     header.min_zoom = 0;
     header.max_zoom = 3;
     header.min_lon_e7 = static_cast<int32_t>(-180.0 * 10000000);
