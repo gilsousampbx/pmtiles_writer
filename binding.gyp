@@ -1,8 +1,8 @@
 {
   "targets": [
     {
-      "target_name": "hello",
-      "sources": ["hello.cc"],
+      "target_name": "modules",
+      "sources": ["modules.cpp"],
       "include_dirs": [
         "libs",
         "libs/nlohmann"
