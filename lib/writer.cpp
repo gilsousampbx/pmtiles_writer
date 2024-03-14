@@ -8,6 +8,13 @@
 
 using json = nlohmann::json;
 
+struct PMTilesBundlerResponse
+{
+    std::stringstream buffer;
+    uint32_t leaf_size;
+};
+
+
 class Writer {
 private:
     std::stringstream buffer;
@@ -47,7 +54,7 @@ public:
         addressed_tiles += 1;
     }
 
-    std::string finalize(pmtiles::headerv3& header, const json& metadata) {
+    PMTilesBundlerResponse finalize(pmtiles::headerv3& header, const json& metadata) {
         header.addressed_tiles_count = addressed_tiles;
         header.tile_entries_count = tile_entries.size();
         header.tile_contents_count = hash_to_offset.size();
@@ -80,12 +87,24 @@ public:
 
         std::string header_bytes = header.serialize();
 
-        buffer.write(header_bytes.c_str(), header_bytes.size());
-        buffer.write(root_bytes.c_str(), root_bytes.size());
-        buffer.write(metadata_bytes.c_str(), metadata_bytes.size());
-        buffer.write(leaves_bytes.c_str(), leaves_bytes.size());
-        buffer << tile_stream.rdbuf();
+        PMTilesBundlerResponse response;
+        response.buffer << buffer.rdbuf();
 
-        return buffer.str();
+        // makes sure the buffer is clear
+        response.buffer.str("");
+        response.buffer.clear();
+
+        response.buffer.write(header_bytes.c_str(), header_bytes.size());
+        response.buffer.write(root_bytes.c_str(), root_bytes.size());
+        response.buffer.write(metadata_bytes.c_str(), metadata_bytes.size());
+        response.buffer.write(leaves_bytes.c_str(), leaves_bytes.size());
+        response.buffer << tile_stream.rdbuf();
+
+        uint32_t total_leaf_size = header.leaf_dirs_bytes;
+        uint32_t num_leaf_nodes = num_leaves;
+        uint32_t leaf_size = (num_leaf_nodes > 0) ? total_leaf_size / num_leaf_nodes : 0;
+        response.leaf_size = leaf_size;
+
+        return response;
     }
 };
