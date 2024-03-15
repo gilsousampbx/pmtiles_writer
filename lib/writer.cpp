@@ -5,6 +5,7 @@
 #include <algorithm>
 #include "pmtiles.hpp"
 #include "nlohmann/json.hpp"
+#include <zlib.h>
 
 using json = nlohmann::json;
 
@@ -14,6 +15,41 @@ struct PMTilesBundlerResponse
     uint32_t leaf_size;
 };
 
+std::string gzipString(const std::string& str) {
+    z_stream zs;
+    memset(&zs, 0, sizeof(zs));
+
+    if (deflateInit2(&zs, Z_DEFAULT_COMPRESSION, Z_DEFLATED, MAX_WBITS | 16, 8, Z_DEFAULT_STRATEGY) != Z_OK) {
+        throw(std::runtime_error("deflateInit2 failed while gzipping."));
+    }
+
+    zs.next_in = (Bytef*)str.data();
+    zs.avail_in = str.size();
+    int ret;
+    char outbuffer[32768];
+    std::string outstring;
+
+    do {
+        zs.next_out = reinterpret_cast<Bytef*>(outbuffer);
+        zs.avail_out = sizeof(outbuffer);
+
+        ret = deflate(&zs, Z_FINISH);
+
+        if (outstring.size() < zs.total_out) {
+            outstring.append(outbuffer, zs.total_out - outstring.size());
+        }
+    } while (ret == Z_OK);
+
+    deflateEnd(&zs);
+
+    if (ret != Z_STREAM_END) {
+        std::ostringstream oss;
+        oss << "Exception during zlib compression: (" << ret << ") " << zs.msg;
+        throw(std::runtime_error(oss.str()));
+    }
+
+    return outstring;
+}
 
 class Writer {
 private:
@@ -130,13 +166,13 @@ public:
 
         auto [root_bytes, leaves_bytes, num_leaves] = pmtiles::make_root_leaves(
             [](const std::string& input, uint8_t compression) {
-                return input.data();
+                return gzipString(input.data());
             },
-            pmtiles::COMPRESSION_NONE,
+            pmtiles::COMPRESSION_GZIP,
             tile_entries
         );
 
-        header.internal_compression = pmtiles::COMPRESSION_NONE;
+        header.internal_compression = pmtiles::COMPRESSION_GZIP;
         header.root_dir_offset = 127;
         header.root_dir_bytes = root_bytes.size();
         header.json_metadata_offset = header.root_dir_offset + header.root_dir_bytes;
