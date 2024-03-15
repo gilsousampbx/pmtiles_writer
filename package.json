@@ -2,10 +2,14 @@
   "name": "@mapbox/pmtiles_writer_bindings",
   "version": "0.1.0",
   "description": "Experiment to convert to the `Writer` class from [PMTiles project](https://github.com/protomaps/PMTiles/blob/main/python/pmtiles/writer.py)  into a C++ class. The create program to test the functionality is based on the example [create_raster_example.py](https://github.com/protomaps/PMTiles/blob/main/python/examples/create_raster_example.py)",
-  "main": "index.js",
+  "main": "./lib/js/index.js",
+  "files": [
+    "/lib/js/index.*"
+  ],
   "scripts": {
     "test": "node test.js",
-    "build": "node-gyp rebuild"
+    "build": "node-gyp rebuild",
+    "install": "node-gyp build"
   },
   "keywords": [],
   "author": {
