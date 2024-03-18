@@ -1,16 +1,16 @@
-export interface GZippeTile {
+export interface GZippedTile {
   buffer: Buffer,
   z: Number,
   x: Number,
   y: Number
 }
 
-export interface PMTileGeneratorRespose {
+export interface PMTileGeneratorResponse {
   buffer: Buffer,
   leaf_size: Number
 }
 
 export function generate_pmtiles_bundle(
-  tiles: GZippeTile[],
+  tiles: GZippedTile[],
   metadata: String
-): PMTileGeneratorRespose;
+): PMTileGeneratorResponse;
