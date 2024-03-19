@@ -25,11 +25,10 @@
     "node-gyp": "^10.0.1"
   },
   "devDependencies": {
-    "aws-sdk": "^2.1579.0",
-    "cmake-js": "^7.3.0"
+    "aws-sdk": "^2.1579.0"
   },
   "binary": {
-    "module_name": "module",
+    "module_name": "modules",
     "module_path": "./lib/binding/",
     "host": "https://mapbox-node-binary.s3.amazonaws.com",
     "remote_path": "./{name}/v{version}/{configuration}/{toolset}/",
