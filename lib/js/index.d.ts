@@ -1,13 +1,13 @@
 export interface GZippedTile {
   buffer: Buffer,
-  z: Number,
-  x: Number,
-  y: Number
+  z: number,
+  x: number,
+  y: number
 }
 
 export interface PMTileGeneratorResponse {
   buffer: Buffer,
-  leaf_size: Number
+  leaf_size: number
 }
 
 export function generate_pmtiles_bundle(
