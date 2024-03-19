@@ -1,4 +1,10 @@
-const addon = require('./build/Release/modules');
+var binary = require('@mapbox/node-pre-gyp');
+var path = require('path');
+var binding_path = binary.find(path.resolve(path.join(__dirname,'./package.json')));
+console.log(binding_path);
+var binding = require(binding_path);
+
+
 
 const z = 0;
 const x = 0;
@@ -14,5 +20,5 @@ const metadata = {
   "sharding_scheme_version": "v1",
 };
 
-const response = addon.generate_pmtiles_bundle([{ z, x, y, buffer }, { z, x, y, buffer }], JSON.stringify(metadata));
+const response = binding.generate_pmtiles_bundle([{ z, x, y, buffer }, { z, x, y, buffer }], JSON.stringify(metadata));
 console.log(response);
