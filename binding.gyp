@@ -13,8 +13,19 @@
       ],
       "cflags_cc": [ "-fexceptions", "-std=c++11" ],
       "xcode_settings": {
-        'GCC_ENABLE_CPP_EXCEPTIONS': 'YES',
+        "GCC_ENABLE_CPP_EXCEPTIONS": "YES"
       }
+    },
+    {
+      "target_name": "action_after_build",
+      "type": "none",
+      "dependencies": [ "modules" ],
+      "copies": [
+        {
+          "files": [ "<(PRODUCT_DIR)/modules.node" ],
+          "destination": "<(module_path)"
+        }
+      ]
     }
   ]
 }
