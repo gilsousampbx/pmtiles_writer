@@ -19,10 +19,10 @@
     {
       "target_name": "action_after_build",
       "type": "none",
-      "dependencies": [ "modules" ],
+      "dependencies": [ "<(module_name)" ],
       "copies": [
         {
-          "files": [ "<(PRODUCT_DIR)/modules.node" ],
+          "files": [ "<(PRODUCT_DIR)/<(module_name).node" ],
           "destination": "<(module_path)"
         }
       ]
