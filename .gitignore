@@ -46,3 +46,4 @@ _deps
 build/
 node_modules/
 .vscode/
+**/*.node
