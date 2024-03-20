@@ -1,4 +1,8 @@
 {
+  "variables": {
+    "module_name": "modules",
+    "module_path": "./lib/binding/",
+  },
   "targets": [
     {
       "target_name": "modules",

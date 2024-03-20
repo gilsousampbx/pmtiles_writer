@@ -6,6 +6,7 @@
 #include "pmtiles.hpp"
 #include "nlohmann/json.hpp"
 #include <zlib.h>
+#include <iostream>
 
 using json = nlohmann::json;
 
@@ -131,7 +132,7 @@ private:
 public:
     Writer() {}
 
-    void write_tile(uint8_t z, uint32_t x, uint32_t y, const std::string& data) {
+    void write_tile(uint32_t z, uint32_t x, uint32_t y, std::stringstream& data) {
         updateStatistics(z, x, y);
 
         uint16_t tileid = pmtiles::zxy_to_tileid(z, x, y);
@@ -140,20 +141,21 @@ public:
             clustered = false;
         }
 
-        size_t hsh = std::hash<std::string>{}(data);
+        std::string data_str = data.str();
+        size_t hsh = std::hash<std::string>{}(data_str);
         if (hash_to_offset.find(hsh) != hash_to_offset.end()) {
             auto last = tile_entries.back();
             auto found = hash_to_offset[hsh];
             if (tileid == last.tile_id + last.run_length && last.offset == found) {
                 tile_entries.back().run_length += 1;
             } else {
-                tile_entries.emplace_back(tileid, found, data.length(), 1);
+                tile_entries.emplace_back(tileid, found, data_str.length(), 1);
             }
         } else {
-            tile_stream.write(data.c_str(), data.length());
-            tile_entries.emplace_back(tileid, offset, data.length(), 1);
+            tile_stream << data_str;
+            tile_entries.emplace_back(tileid, offset, data_str.length(), 1);
             hash_to_offset[hsh] = offset;
-            offset += data.length();
+            offset += data_str.length();
         }
 
         addressed_tiles += 1;
