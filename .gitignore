@@ -45,5 +45,7 @@ CTestTestfile.cmake
 _deps
 build/
 node_modules/
-.vscode/
 **/*.node
+lib/boost_1_82_0/
+lib/gzip-hpp-0.1.0/
+*.pmtiles
