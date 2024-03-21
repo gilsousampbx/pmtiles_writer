@@ -53,16 +53,16 @@ private:
             minlon = ul_lon_deg;
         }
 
-        if (tile_entries.size() == 0 || ul_lat_deg < minlat) {
-            minlat = ul_lat_deg;
+        if (tile_entries.size() == 0 || ul_lat_deg > maxlat) {
+            maxlat = ul_lat_deg;
         }
 
         if (tile_entries.size() == 0 || lr_lon_deg > maxlon) {
             maxlon = lr_lon_deg;
         }
 
-        if (tile_entries.size() == 0 || lr_lat_deg > maxlat) {
-            maxlat = lr_lat_deg;
+        if (tile_entries.size() == 0 || lr_lat_deg < minlat) {
+            minlat = lr_lat_deg;
         }
 
         if (tile_entries.size() == 0 || z < minzoom) {
@@ -139,17 +139,18 @@ public:
             pmtiles::COMPRESSION_GZIP,
             tile_entries
         );
+        std::string compressed_metadata = gzipString(metadata);
 
         std::string compressed_metadata = gzip::compress(metadata.data(), metadata.size());
 
         header.internal_compression = pmtiles::COMPRESSION_GZIP;
         header.root_dir_offset = 127;
         header.root_dir_bytes = root_bytes.size();
-        header.json_metadata_offset = header.root_dir_offset + header.root_dir_bytes;
-        header.json_metadata_bytes = compressed_metadata.size();
-        header.leaf_dirs_offset = header.json_metadata_offset + header.json_metadata_bytes;
+        header.leaf_dirs_offset = header.root_dir_offset + header.root_dir_bytes;
         header.leaf_dirs_bytes = leaves_bytes.size();
-        header.tile_data_offset = header.leaf_dirs_offset + header.leaf_dirs_bytes;
+        header.json_metadata_offset = header.leaf_dirs_offset + header.leaf_dirs_bytes;
+        header.json_metadata_bytes = compressed_metadata.size();
+        header.tile_data_offset = header.json_metadata_offset + header.json_metadata_bytes;
         header.tile_data_bytes = offset;
 
         // debug code delete after
