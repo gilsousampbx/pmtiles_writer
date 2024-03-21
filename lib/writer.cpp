@@ -173,10 +173,7 @@ public:
         response.buffer.write(compressed_metadata.c_str(), compressed_metadata.size());
         response.buffer << tile_stream.rdbuf();
 
-        uint32_t total_leaf_size = header.leaf_dirs_bytes;
-        uint32_t num_leaf_nodes = num_leaves;
-        uint32_t leaf_size = (num_leaf_nodes > 0) ? total_leaf_size / num_leaf_nodes : 0;
-        response.leaf_size = leaf_size;
+        response.leaf_size = header.leaf_dirs_bytes;
 
         return response;
     }
