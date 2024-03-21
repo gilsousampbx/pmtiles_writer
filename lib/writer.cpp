@@ -87,16 +87,16 @@ private:
             minlon = ul_lon_deg;
         }
 
-        if (tile_entries.size() == 0 || ul_lat_deg < minlat) {
-            minlat = ul_lat_deg;
+        if (tile_entries.size() == 0 || ul_lat_deg > maxlat) {
+            maxlat = ul_lat_deg;
         }
 
         if (tile_entries.size() == 0 || lr_lon_deg > maxlon) {
             maxlon = lr_lon_deg;
         }
 
-        if (tile_entries.size() == 0 || lr_lat_deg > maxlat) {
-            maxlat = lr_lat_deg;
+        if (tile_entries.size() == 0 || lr_lat_deg < minlat) {
+            minlat = lr_lat_deg;
         }
 
         if (tile_entries.size() == 0 || z < minzoom) {
