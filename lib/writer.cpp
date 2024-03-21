@@ -139,7 +139,6 @@ public:
             pmtiles::COMPRESSION_GZIP,
             tile_entries
         );
-        std::string compressed_metadata = gzipString(metadata);
 
         std::string compressed_metadata = gzip::compress(metadata.data(), metadata.size());
 
