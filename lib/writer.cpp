@@ -173,15 +173,16 @@ public:
             pmtiles::COMPRESSION_GZIP,
             tile_entries
         );
+        std::string compressed_metadata = gzipString(metadata);
 
         header.internal_compression = pmtiles::COMPRESSION_GZIP;
         header.root_dir_offset = 127;
         header.root_dir_bytes = root_bytes.size();
-        header.json_metadata_offset = header.root_dir_offset + header.root_dir_bytes;
-        header.json_metadata_bytes = metadata.size();
-        header.leaf_dirs_offset = header.json_metadata_offset + header.json_metadata_bytes;
+        header.leaf_dirs_offset = header.root_dir_offset + header.root_dir_bytes;
         header.leaf_dirs_bytes = leaves_bytes.size();
-        header.tile_data_offset = header.leaf_dirs_offset + header.leaf_dirs_bytes;
+        header.json_metadata_offset = header.leaf_dirs_offset + header.leaf_dirs_bytes;
+        header.json_metadata_bytes = compressed_metadata.size();
+        header.tile_data_offset = header.json_metadata_offset + header.json_metadata_bytes;
         header.tile_data_bytes = offset;
 
         std::string header_bytes = header.serialize();
@@ -195,8 +196,8 @@ public:
 
         response.buffer.write(header_bytes.c_str(), header_bytes.size());
         response.buffer.write(root_bytes.c_str(), root_bytes.size());
-        response.buffer.write(metadata.c_str(), metadata.size());
         response.buffer.write(leaves_bytes.c_str(), leaves_bytes.size());
+        response.buffer.write(compressed_metadata.c_str(), compressed_metadata.size());
         response.buffer << tile_stream.rdbuf();
 
         uint32_t total_leaf_size = header.leaf_dirs_bytes;
