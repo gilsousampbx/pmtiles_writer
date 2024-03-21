@@ -7,6 +7,8 @@
 #include "nlohmann/json.hpp"
 #include <zlib.h>
 #include <iostream>
+#include <boost/endian/conversion.hpp>
+#include <gzip/compress.hpp>
 
 using json = nlohmann::json;
 
@@ -15,42 +17,6 @@ struct PMTilesBundlerResponse
     std::stringstream buffer;
     uint32_t leaf_size;
 };
-
-std::string gzipString(const std::string& str) {
-    z_stream zs;
-    memset(&zs, 0, sizeof(zs));
-
-    if (deflateInit2(&zs, Z_DEFAULT_COMPRESSION, Z_DEFLATED, MAX_WBITS | 16, 8, Z_DEFAULT_STRATEGY) != Z_OK) {
-        throw(std::runtime_error("deflateInit2 failed while gzipping."));
-    }
-
-    zs.next_in = (Bytef*)str.data();
-    zs.avail_in = str.size();
-    int ret;
-    char outbuffer[32768];
-    std::string outstring;
-
-    do {
-        zs.next_out = reinterpret_cast<Bytef*>(outbuffer);
-        zs.avail_out = sizeof(outbuffer);
-
-        ret = deflate(&zs, Z_FINISH);
-
-        if (outstring.size() < zs.total_out) {
-            outstring.append(outbuffer, zs.total_out - outstring.size());
-        }
-    } while (ret == Z_OK);
-
-    deflateEnd(&zs);
-
-    if (ret != Z_STREAM_END) {
-        std::ostringstream oss;
-        oss << "Exception during zlib compression: (" << ret << ") " << zs.msg;
-        throw(std::runtime_error(oss.str()));
-    }
-
-    return outstring;
-}
 
 class Writer {
 private:
@@ -111,7 +77,7 @@ private:
         pmtiles::headerv3 header;
 
         header.tile_type = pmtiles::TILETYPE_MVT;
-        header.tile_compression = pmtiles::COMPRESSION_UNKNOWN;
+        header.tile_compression = pmtiles::COMPRESSION_NONE;
         header.min_zoom = minzoom;
         header.max_zoom = maxzoom;
         header.min_lon_e7 = static_cast<int32_t>(minlon);
@@ -168,26 +134,34 @@ public:
 
         auto [root_bytes, leaves_bytes, num_leaves] = pmtiles::make_root_leaves(
             [](const std::string& input, uint8_t compression) {
-                return gzipString(input.data());
+                return gzip::compress(input.data(), input.size());
             },
             pmtiles::COMPRESSION_GZIP,
             tile_entries
         );
 
+        std::string compressed_metadata = gzip::compress(metadata.data(), metadata.size());
+
         header.internal_compression = pmtiles::COMPRESSION_GZIP;
         header.root_dir_offset = 127;
         header.root_dir_bytes = root_bytes.size();
         header.json_metadata_offset = header.root_dir_offset + header.root_dir_bytes;
-        header.json_metadata_bytes = metadata.size();
+        header.json_metadata_bytes = compressed_metadata.size();
         header.leaf_dirs_offset = header.json_metadata_offset + header.json_metadata_bytes;
         header.leaf_dirs_bytes = leaves_bytes.size();
         header.tile_data_offset = header.leaf_dirs_offset + header.leaf_dirs_bytes;
         header.tile_data_bytes = offset;
 
+        // debug code delete after
+        header.clustered = true;
+        header.internal_compression = pmtiles::COMPRESSION_GZIP;
+        header.tile_compression = pmtiles::COMPRESSION_UNKNOWN;
+        header.tile_type = pmtiles::TILETYPE_MVT;
+
+
         std::string header_bytes = header.serialize();
 
         PMTilesBundlerResponse response;
-        response.buffer << buffer.rdbuf();
 
         // makes sure the buffer is clear
         response.buffer.str("");
@@ -195,8 +169,8 @@ public:
 
         response.buffer.write(header_bytes.c_str(), header_bytes.size());
         response.buffer.write(root_bytes.c_str(), root_bytes.size());
-        response.buffer.write(metadata.c_str(), metadata.size());
         response.buffer.write(leaves_bytes.c_str(), leaves_bytes.size());
+        response.buffer.write(compressed_metadata.c_str(), compressed_metadata.size());
         response.buffer << tile_stream.rdbuf();
 
         uint32_t total_leaf_size = header.leaf_dirs_bytes;
