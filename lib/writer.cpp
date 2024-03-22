@@ -69,7 +69,7 @@ private:
             minzoom = z;
         }
         if (tile_entries.size() == 0 || z > maxzoom) {
-            minzoom = z;
+            maxzoom = z;
         }
     }
 
