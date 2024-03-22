@@ -1,0 +1,41 @@
+{
+  "name": "@mapbox/pmtiles_writer_bindings",
+  "version": "0.1.0-dev4",
+  "description": "Experiment to convert to the `Writer` class from [PMTiles project](https://github.com/protomaps/PMTiles/blob/main/python/pmtiles/writer.py)  into a C++ class. The create program to test the functionality is based on the example [create_raster_example.py](https://github.com/protomaps/PMTiles/blob/main/python/examples/create_raster_example.py)",
+  "main": "./lib/js/index.js",
+  "files": [
+    "/lib/js/index.*"
+  ],
+  "scripts": {
+    "start": "node test.js",
+    "build:dev": "node-gyp build --debug",
+    "build": "node-gyp build",
+    "rebuild:dev": "node-gyp rebuild --debug",
+    "rebuild": "node-gyp rebuild",
+    "install": "node-pre-gyp install --fallback-to-build --verbose",
+    "clean": "node-gyp clean"
+  },
+  "keywords": [],
+  "author": {
+    "name": "Copyright © Mapbox",
+    "email": "info@mapbox.com",
+    "url": "https://www.mapbox.com/"
+  },
+  "license": "UNLICENSED",
+  "gypfile": true,
+  "dependencies": {
+    "@mapbox/node-pre-gyp": "^1.0.11",
+    "node-addon-api": "^8.0.0",
+    "node-gyp": "^10.0.1"
+  },
+  "devDependencies": {
+    "aws-sdk": "^2.1579.0"
+  },
+  "binary": {
+    "module_name": "modules",
+    "module_path": "./lib/binding/",
+    "host": "https://mapbox-node-binary.s3.amazonaws.com",
+    "remote_path": "./{name}/v{version}/{configuration}/{toolset}/",
+    "package_name": "{node_abi}-{platform}-{arch}.tar.gz"
+  }
+}
