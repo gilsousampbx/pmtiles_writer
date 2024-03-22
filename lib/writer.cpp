@@ -6,6 +6,9 @@
 #include "pmtiles.hpp"
 #include "nlohmann/json.hpp"
 #include <zlib.h>
+#include <iostream>
+#include <boost/endian/conversion.hpp>
+#include <gzip/compress.hpp>
 
 using json = nlohmann::json;
 
@@ -14,42 +17,6 @@ struct PMTilesBundlerResponse
     std::stringstream buffer;
     uint32_t leaf_size;
 };
-
-std::string gzipString(const std::string& str) {
-    z_stream zs;
-    memset(&zs, 0, sizeof(zs));
-
-    if (deflateInit2(&zs, Z_DEFAULT_COMPRESSION, Z_DEFLATED, MAX_WBITS | 16, 8, Z_DEFAULT_STRATEGY) != Z_OK) {
-        throw(std::runtime_error("deflateInit2 failed while gzipping."));
-    }
-
-    zs.next_in = (Bytef*)str.data();
-    zs.avail_in = str.size();
-    int ret;
-    char outbuffer[32768];
-    std::string outstring;
-
-    do {
-        zs.next_out = reinterpret_cast<Bytef*>(outbuffer);
-        zs.avail_out = sizeof(outbuffer);
-
-        ret = deflate(&zs, Z_FINISH);
-
-        if (outstring.size() < zs.total_out) {
-            outstring.append(outbuffer, zs.total_out - outstring.size());
-        }
-    } while (ret == Z_OK);
-
-    deflateEnd(&zs);
-
-    if (ret != Z_STREAM_END) {
-        std::ostringstream oss;
-        oss << "Exception during zlib compression: (" << ret << ") " << zs.msg;
-        throw(std::runtime_error(oss.str()));
-    }
-
-    return outstring;
-}
 
 class Writer {
 private:
@@ -86,16 +53,16 @@ private:
             minlon = ul_lon_deg;
         }
 
-        if (tile_entries.size() == 0 || ul_lat_deg < minlat) {
-            minlat = ul_lat_deg;
+        if (tile_entries.size() == 0 || ul_lat_deg > maxlat) {
+            maxlat = ul_lat_deg;
         }
 
         if (tile_entries.size() == 0 || lr_lon_deg > maxlon) {
             maxlon = lr_lon_deg;
         }
 
-        if (tile_entries.size() == 0 || lr_lat_deg > maxlat) {
-            maxlat = lr_lat_deg;
+        if (tile_entries.size() == 0 || lr_lat_deg < minlat) {
+            minlat = lr_lat_deg;
         }
 
         if (tile_entries.size() == 0 || z < minzoom) {
@@ -110,7 +77,7 @@ private:
         pmtiles::headerv3 header;
 
         header.tile_type = pmtiles::TILETYPE_MVT;
-        header.tile_compression = pmtiles::COMPRESSION_UNKNOWN;
+        header.tile_compression = pmtiles::COMPRESSION_NONE;
         header.min_zoom = minzoom;
         header.max_zoom = maxzoom;
         header.min_lon_e7 = static_cast<int32_t>(minlon);
@@ -131,7 +98,7 @@ private:
 public:
     Writer() {}
 
-    void write_tile(uint8_t z, uint32_t x, uint32_t y, const std::string& data) {
+    void write_tile(uint32_t z, uint32_t x, uint32_t y, std::stringstream& data) {
         updateStatistics(z, x, y);
 
         uint16_t tileid = pmtiles::zxy_to_tileid(z, x, y);
@@ -140,20 +107,21 @@ public:
             clustered = false;
         }
 
-        size_t hsh = std::hash<std::string>{}(data);
+        std::string data_str = data.str();
+        size_t hsh = std::hash<std::string>{}(data_str);
         if (hash_to_offset.find(hsh) != hash_to_offset.end()) {
             auto last = tile_entries.back();
             auto found = hash_to_offset[hsh];
             if (tileid == last.tile_id + last.run_length && last.offset == found) {
                 tile_entries.back().run_length += 1;
             } else {
-                tile_entries.emplace_back(tileid, found, data.length(), 1);
+                tile_entries.emplace_back(tileid, found, data_str.length(), 1);
             }
         } else {
-            tile_stream.write(data.c_str(), data.length());
-            tile_entries.emplace_back(tileid, offset, data.length(), 1);
+            tile_stream << data_str;
+            tile_entries.emplace_back(tileid, offset, data_str.length(), 1);
             hash_to_offset[hsh] = offset;
-            offset += data.length();
+            offset += data_str.length();
         }
 
         addressed_tiles += 1;
@@ -166,26 +134,36 @@ public:
 
         auto [root_bytes, leaves_bytes, num_leaves] = pmtiles::make_root_leaves(
             [](const std::string& input, uint8_t compression) {
-                return gzipString(input.data());
+                size_t input_size = input.size();
+                auto input_data = input.data();
+                return gzip::compress(input_data, input_size);
             },
             pmtiles::COMPRESSION_GZIP,
             tile_entries
         );
 
+        std::string compressed_metadata = gzip::compress(metadata.data(), metadata.size());
+
         header.internal_compression = pmtiles::COMPRESSION_GZIP;
         header.root_dir_offset = 127;
         header.root_dir_bytes = root_bytes.size();
-        header.json_metadata_offset = header.root_dir_offset + header.root_dir_bytes;
-        header.json_metadata_bytes = metadata.size();
-        header.leaf_dirs_offset = header.json_metadata_offset + header.json_metadata_bytes;
+        header.leaf_dirs_offset = header.root_dir_offset + header.root_dir_bytes;
         header.leaf_dirs_bytes = leaves_bytes.size();
-        header.tile_data_offset = header.leaf_dirs_offset + header.leaf_dirs_bytes;
+        header.json_metadata_offset = header.leaf_dirs_offset + header.leaf_dirs_bytes;
+        header.json_metadata_bytes = compressed_metadata.size();
+        header.tile_data_offset = header.json_metadata_offset + header.json_metadata_bytes;
         header.tile_data_bytes = offset;
+
+        // debug code delete after
+        header.clustered = true;
+        header.internal_compression = pmtiles::COMPRESSION_GZIP;
+        header.tile_compression = pmtiles::COMPRESSION_UNKNOWN;
+        header.tile_type = pmtiles::TILETYPE_MVT;
+
 
         std::string header_bytes = header.serialize();
 
         PMTilesBundlerResponse response;
-        response.buffer << buffer.rdbuf();
 
         // makes sure the buffer is clear
         response.buffer.str("");
@@ -193,14 +171,11 @@ public:
 
         response.buffer.write(header_bytes.c_str(), header_bytes.size());
         response.buffer.write(root_bytes.c_str(), root_bytes.size());
-        response.buffer.write(metadata.c_str(), metadata.size());
         response.buffer.write(leaves_bytes.c_str(), leaves_bytes.size());
+        response.buffer.write(compressed_metadata.c_str(), compressed_metadata.size());
         response.buffer << tile_stream.rdbuf();
 
-        uint32_t total_leaf_size = header.leaf_dirs_bytes;
-        uint32_t num_leaf_nodes = num_leaves;
-        uint32_t leaf_size = (num_leaf_nodes > 0) ? total_leaf_size / num_leaf_nodes : 0;
-        response.leaf_size = leaf_size;
+        response.leaf_size = header.leaf_dirs_bytes;
 
         return response;
     }

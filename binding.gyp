@@ -1,11 +1,17 @@
 {
+  "variables": {
+    "module_name": "modules",
+    "module_path": "./lib/binding/",
+  },
   "targets": [
     {
       "target_name": "modules",
       "sources": ["modules.cpp"],
       "include_dirs": [
-        "libs",
-        "libs/nlohmann",
+        "lib",
+        "lib/nlohmann",
+        "lib/boost_1_82_0",
+        "lib/gzip-hpp-0.1.0/include",
         "<!(pkg-config --cflags zlib)"
       ],
       "libraries": [

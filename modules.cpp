@@ -3,6 +3,8 @@
 #include "lib/writer.cpp"
 #include <iostream>
 
+#include <node_buffer.h>
+
 using v8::FunctionCallbackInfo;
 using v8::Isolate;
 using v8::Local;
@@ -51,13 +53,21 @@ void GeneratePMTilesBundle(const FunctionCallbackInfo<Value>& args) {
             String::NewFromUtf8(isolate, "y").ToLocalChecked()
         ).ToLocalChecked()->Int32Value(isolate->GetCurrentContext()).ToChecked();
 
-        std::string tile = *String::Utf8Value(
-            isolate,
-            t_obj->Get(isolate->GetCurrentContext(), String::NewFromUtf8(isolate, "buffer").ToLocalChecked()).ToLocalChecked()
-        );
+        v8::Local<v8::Value> bufferValue = t_obj->Get(
+            isolate->GetCurrentContext(), 
+            v8::String::NewFromUtf8(isolate, "buffer").ToLocalChecked()
+        ).ToLocalChecked();
 
-        writer.write_tile(z, x, y, tile);
-        std::cout << tile << std::endl;
+        v8::Local<v8::Object> bufferObj = bufferValue->ToObject(isolate->GetCurrentContext()).ToLocalChecked();
+
+        std::stringstream ss;
+
+        size_t bufferLength = node::Buffer::Length(bufferObj);
+        char* bufferData = node::Buffer::Data(bufferObj);
+
+        ss.write(bufferData, bufferLength);
+
+        writer.write_tile(z, x, y, ss);
     }
 
     if (!args[1]->IsString()) {

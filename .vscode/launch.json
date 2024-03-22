@@ -1,0 +1,22 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Python Debugger: Current File",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${file}",
+            "console": "integratedTerminal"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Launch Program",
+            "preLaunchTask": "npm: build:dev",
+            "program": "/Users/gilsousa/.nvm/versions/node/v20.11.0/bin/node",
+            "args": [
+                "/Users/gilsousa/Desktop/pmtiles_writer/test.js"
+            ]
+        },
+    ]
+}

@@ -7,9 +7,13 @@
     "/lib/js/index.*"
   ],
   "scripts": {
-    "test": "node test.js",
-    "build": "node-gyp rebuild",
-    "install": "node-pre-gyp install --fallback-to-build --verbose"
+    "start": "node test.js",
+    "build:dev": "node-gyp build --debug",
+    "build": "node-gyp build",
+    "rebuild:dev": "node-gyp rebuild --debug",
+    "rebuild": "node-gyp rebuild",
+    "install": "node-pre-gyp install --fallback-to-build --verbose",
+    "clean": "node-gyp clean"
   },
   "keywords": [],
   "author": {
