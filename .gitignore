@@ -49,3 +49,5 @@ node_modules/
 lib/boost_1_82_0/
 lib/gzip-hpp-0.1.0/
 *.pmtiles
+env/
+pmtiles/
