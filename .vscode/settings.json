@@ -67,6 +67,19 @@
         "valarray": "cpp",
         "variant": "cpp",
         "vector": "cpp",
-        "algorithm": "cpp"
+        "algorithm": "cpp",
+        "shared_mutex": "cpp",
+        "cfenv": "cpp",
+        "cinttypes": "cpp",
+        "codecvt": "cpp",
+        "condition_variable": "cpp",
+        "csetjmp": "cpp",
+        "coroutine": "cpp",
+        "future": "cpp",
+        "queue": "cpp",
+        "source_location": "cpp",
+        "stack": "cpp",
+        "strstream": "cpp",
+        "typeindex": "cpp"
     }
 }
