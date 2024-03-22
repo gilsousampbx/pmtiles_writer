@@ -2,15 +2,11 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "type": "node",
+            "name": "Python Debugger: Current File",
+            "type": "debugpy",
             "request": "launch",
-            "name": "Debug C++ Addon",
-            "program": "${workspaceFolder}/test.js",
-            "runtimeArgs": [
-                "--inspect-brk=9229"
-            ],
-            "sourceMaps": true,
-            "cwd": "${workspaceFolder}"
+            "program": "${file}",
+            "console": "integratedTerminal"
         },
         {
             "type": "lldb",
@@ -19,8 +15,8 @@
             "preLaunchTask": "npm: build:dev",
             "program": "/Users/gilsousa/.nvm/versions/node/v20.11.0/bin/node",
             "args": [
-               "/Users/gilsousa/Desktop/pmtiles_writer/test.js"
+                "/Users/gilsousa/Desktop/pmtiles_writer/test.js"
             ]
-         }
+        },
     ]
 }
