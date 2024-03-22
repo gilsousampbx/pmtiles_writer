@@ -134,7 +134,9 @@ public:
 
         auto [root_bytes, leaves_bytes, num_leaves] = pmtiles::make_root_leaves(
             [](const std::string& input, uint8_t compression) {
-                return gzip::compress(input.data(), input.size());
+                size_t input_size = input.size();
+                auto input_data = input.data();
+                return gzip::compress(input_data, input_size);
             },
             pmtiles::COMPRESSION_GZIP,
             tile_entries
