@@ -54,7 +54,7 @@ void GeneratePMTilesBundle(const FunctionCallbackInfo<Value>& args) {
         ).ToLocalChecked()->Int32Value(isolate->GetCurrentContext()).ToChecked();
 
         v8::Local<v8::Value> bufferValue = t_obj->Get(
-            isolate->GetCurrentContext(), 
+            isolate->GetCurrentContext(),
             v8::String::NewFromUtf8(isolate, "buffer").ToLocalChecked()
         ).ToLocalChecked();
 
@@ -80,9 +80,9 @@ void GeneratePMTilesBundle(const FunctionCallbackInfo<Value>& args) {
 
     PMTilesBundlerResponse response = writer.finalize(metadata);
 
-    Local<String> bufferString = String::NewFromUtf8(
+    Local<String> bufferString = String::NewFromOneByte(
         isolate,
-        response.buffer.str().c_str(),
+        reinterpret_cast<const uint8_t*>(response.buffer.str().c_str()),
         v8::NewStringType::kNormal,
         response.buffer.str().length()
     ).ToLocalChecked();

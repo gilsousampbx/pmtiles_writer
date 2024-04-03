@@ -55,5 +55,6 @@ const tiles = [
 
 const response = binding.generate_pmtiles_bundle(tiles, JSON.stringify(metadata));
 console.log(response.buffer.length);
-fs.writeFileSync(`${__dirname}/bundle.pmtiles`, response.buffer, { encoding: 'ascii' });
+fs.writeFileSync(`${__dirname}/bundle.pmtiles`, Buffer.from(response.buffer, 'binary'));
+// fs.writeFileSync(`${__dirname}/bundle.pmtiles`, response.buffer, { encoding: 'ascii' });
 console.log(response);

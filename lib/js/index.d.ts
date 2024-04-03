@@ -6,11 +6,11 @@ export interface GZippedTile {
 }
 
 export interface PMTileGeneratorResponse {
-  buffer: Buffer,
+  buffer: string,
   leaf_size: number
 }
 
 export function generate_pmtiles_bundle(
   tiles: GZippedTile[],
-  metadata: String
+  metadata: string
 ): PMTileGeneratorResponse;
